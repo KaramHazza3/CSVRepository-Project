@@ -25,3 +25,6 @@ User pool made by Cognito for Login Ui without signUp because i will create a sp
 each group has a different pemissions (reader,staff,admin) staff can read and upload and reader can just read, i have connected each API on its function in Angular and i compared the permission to hide the action that he can't do it (the user) from its Ui
 
 Finally, i pushed my project on github to use AWS Amplify which hosts my project and install the required dependencies if needed or lost and monotoring any changes made in GitHub to make the changes meet AWS services.
+
+And if i forget to say that policies (permissions) are required for every lambda function that uses s3,dynamoDB, SNS and KMS are required to complete the tasks
+i added to them and without them the lambda function is not authorized to write/read from any aws service without permissions, (When i want to upload on DynamoDB and S3 i need full access from s3 and dynamoDB etc...) and if i want just read i just need readonlypolicy
