@@ -1,0 +1,31 @@
+# Node.js files
+node_modules/
+npm-debug.log
+
+# Compiled output
+dist/
+*.class
+*.js
+*.js.map
+*.json
+*.pack
+*.pack.old
+
+# Log files
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+*.iml
+
+# User-specific files
+/.history/
+.vscode/
+
+# Environment files
+environment*.ts

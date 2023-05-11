@@ -1,0 +1,6 @@
+<div class="container">
+  <div>
+    <app-file-upload (fileUploaded)="uploadFile($event)"></app-file-upload>
+  </div>
+  <app-files-list (uploadedFiles)="files=$event"></app-files-list>
+</div>
