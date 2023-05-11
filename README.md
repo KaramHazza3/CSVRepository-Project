@@ -28,3 +28,5 @@ Finally, i pushed my project on github to use AWS Amplify which hosts my project
 
 And if i forget to say that policies (permissions) are required for every lambda function that uses s3,dynamoDB, SNS and KMS are required to complete the tasks
 i added to them and without them the lambda function is not authorized to write/read from any aws service without permissions, (When i want to upload on DynamoDB and S3 i need full access from s3 and dynamoDB etc...) and if i want just read i just need readonlypolicy
+
+Overall, we used lambda function because of its effiecieny and scalability on demand and its easy and do integrations with other aws services like SNS/API Gateaway, S3 high scalable storage and secure place to store objects there and easy to use and API Gateaway is a fully managed service that makes it easy for us to publish, maintain, monitor, create routes and integrations with lambda functions and secure APIs at any scale.
