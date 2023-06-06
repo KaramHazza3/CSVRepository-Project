@@ -1,32 +1,33 @@
-# CSVRepository-Project
+#CSV Repository
+CSV Repository is a file storage system that allows users to upload, delete, and download CSV files through a web interface. The repository also provides the ability to view files in JSON format based on the user's role. This README provides an overview of the system's architecture and components.
 
-CSV Repository is a storage contains files in csv extention, you can upload/delete/download files from our website, you can also see any file in JSON format based on your role.
+#API Gateway
+The API Gateway is implemented as an HTTP API due to issues encountered with the traditional REST API. The HTTP API ensures proper recognition of the selected CSV file's content by using the "Content-Type: text/csv" header. Routes are utilized to consolidate multiple Lambda functions under a single base URL, reducing the need for multiple APIs.
 
-First let's talk about how we did API Gateaway, I made an HTTP API because i faced some problems with REST API such as it didn't recognize the content of selected csv file even with header "Content-Type: text/csv", then routes are required because we don't need to make many APIs for many lambda functions, we must have a base url for our application and routes are triggered with their lambdas functions.
+#Lambda Functions
+Lambda functions are designed to adhere to the Single Responsibility Principle (SRP). The upload lambda function utilizes the Simple Notification Service (SNS) to send a notification containing the filename and file content. Another function subscribes to the SNS topic and retrieves the filename and content. The necessary permissions for sending and receiving messages are granted to the Lambda functions interacting with the SNS topic.
 
-Second lambda functions are made to meet the assignment requirements and in SRP, first, I made the upload lambda, I asked myself how another function will get the filename and its content if we will make the project in SRP, so I recognized that this is SNS usage. I send an SNS and another function subscribes to the topic and takes the filename and its content well. permission to send and receive messages required for lambdas that have interaction with the SNS Topic. Then KMS is required here on upload because you want an encrypted file to be uploaded and decrypted when retrieval, KMS custom policy is required to complete this task and attach it to who has interaction with KMS and objects needed to be encrypted or decrypted.
-and the same idea for delete because you want if table deleted, the s3 object must be deleted too, so SNS usage came on my mind too like the previous idea but without file content because no need, and the required permissions for functions that have interaction with the SNS Topic, every action needs and SNS Topic to differentiate the receiver and it's messages.
+Encryption using the Key Management Service (KMS) is employed during file upload. The uploaded file is encrypted and subsequently decrypted during retrieval. Custom KMS policies are created to enable this functionality and are attached to the relevant entities interacting with KMS.
 
-some lambda functions like Delete and Upload and other lambda functions need a QueryStringParamter to complete their tasks because without it I don't think that anyone can do it, it specifies the file's name that has been selected and can be selected in FE (Front-End)
+Similar to the upload function, the delete function leverages SNS to notify other functions about the deletion action. In this case, file content is not required. Permissions are granted to the functions interacting with the SNS topic, and separate topics are used to distinguish between receivers and their messages.
 
-S3 Bucket with ACLS enabled to manage access to s3 stored objects to get all the available files for the ShowAllFiles lambda function that is triggered by the base URL of the HTTP API with ReadOnlyPermission and with KMS encryption (customized policy/permission) to encrypt the stored objects and decrypt when downloaded.
+Certain Lambda functions, such as Delete and Upload, require a QueryStringParameter to complete their tasks. This parameter specifies the selected file's name, which can be chosen in the front-end (FE) user interface.
 
-DynamoDB tables are created just from lambda function when it gets the filename and its content (body), it splits the lines and takes the first line as headers array (headers[0] is the first header and headers[1] is the second one.....) and the lines start from 1 is the data of the headers. When we convert them to JSON to show the table as JSON (file selected by a user to be downloaded in JSON format) we give every Key its Value, the Key is the header and the value is its value (of the header) and then we convert all the array that has objects of each line to JSON by doing JSON.stringify()
+#S3 Bucket
+The S3 Bucket is configured with Access Control Lists (ACLs) to manage access to stored objects. The ShowAllFiles Lambda function, triggered by the base URL of the HTTP API, is granted read-only permissions to the bucket. Additionally, KMS encryption is applied to the stored objects using a customized policy. This ensures that objects are encrypted at rest and decrypted when downloaded.
 
-When the API notifies the functions that have interaction with SNS Topics, their subscribers got specific information about the file that needs (upload needs name and file content) and (delete just needs the file name to scan if the exists or not)
+Conflicting object names are handled by overwriting the previously stored object in the S3 bucket with the newer one. DynamoDB performs a check for existing table names and deletes them if found, allowing the new data to be inserted, even if it is identical to the previous table. This ensures that updates are properly applied.
 
-On the DownloadFile lambda function, I created a signedUrl (downloadUrl) with a 5min expiration time, I made that because on front end I will make the URL clicked without the user notice that, he can notice that the file just downloaded on his PC.
+#DynamoDB
+DynamoDB tables are dynamically created by a Lambda function when it receives the filename and its content. The function splits the lines and extracts the first line as the headers array. Subsequent lines, starting from index 1, constitute the data. Each key-value pair is assigned to its respective header, and the array of objects representing each line is converted to JSON using JSON.stringify(). This JSON representation allows users to view the table as JSON when downloading a selected file.
 
-S3 Bucket Overwrites the object that is previously stored on the bucket with the newer one that has a conflict with the previous one because it has the same name by itself, and in DynamoDB I made it checks if the table name exists to delete it and put the new data even if the data is the same as the previous table to ensure that if there is an update not like the previous to put the newer table (that has the updates)
+#CloudWatch
+CloudWatch plays a crucial role in debugging errors and providing insights during development. Console.log() statements are utilized to print variable values for debugging purposes. Try-catch blocks are used to capture errors and return appropriate error responses through the API.
 
-CloudWatch helped me a lot with debugging the errors and printing some variables for debugging too (console.log()) and the try catch blocks to return an error in API response if occurs.
+#User Pool
+Cognito is employed to create a user pool for user authentication in the login UI. Only specific users belonging to designated groups are allowed to access the system. Each group is assigned specific permissions (e.g., reader, staff, admin). Angular is used to connect each API to its respective function, and permissions are compared to hide unauthorized actions in the user interface.
 
-User pool made by Cognito for Login Ui without signUp because i will create a specific users has a specific groups and the groups created has specific permissions
-each group has a different pemissions (reader,staff,admin) staff can read and upload and reader can just read, i have connected each API on its function in Angular and i compared the permission to hide the action that he can't do it (the user) from its Ui
+#GitHub and AWS Amplify
+The project is hosted on GitHub, allowing the use of AWS Amplify for deployment. Amplify handles the installation of required dependencies and monitors changes made in the GitHub
 
-Finally, i pushed my project on github to use AWS Amplify which hosts my project and install the required dependencies if needed or lost and monotoring any changes made in GitHub to make the changes meet AWS services.
-
-And if i forget to say that policies (permissions) are required for every lambda function that uses s3,dynamoDB, SNS and KMS are required to complete the tasks
-i added to them and without them the lambda function is not authorized to write/read from any aws service without permissions, (When i want to upload on DynamoDB and S3 i need full access from s3 and dynamoDB etc...) and if i want just read i just need readonlypolicy
-
-Overall, we used lambda function because of its effiecieny and scalability on demand, easy to use and can handle a large number of requests, S3 high scalable storage and secure place to store objects there and easy to use and API Gateaway is a fully managed service that makes it easy for us to publish, maintain, monitor, create routes and integrations with lambda functions and secure APIs at any scale, Cognito is very good because i can easily add user sign-up, sign-in, and access control to my web application. It integrates with other AWS services like API Gateway and Lambda, and provides features like multi-factor authentication, DynamoDB is a fully managed NoSQL database service that provides high performance, scalability, and availability. It is designed to handle large amounts of data and supports features like auto scaling.
+![Capture](https://github.com/KaramHazza3/CSVRepository-Project/assets/77400199/2470a2b3-4c6b-447a-9749-6242668676b9)
